@@ -1,0 +1,26 @@
+*.dat
+*.iml
+*.log
+*.out
+*.pid
+*.seed
+*.sublime-*
+*.swo
+*.swp
+*.tgz
+*.xml
+*.txt
+*.csv
+*.mac
+.DS_Store
+ providers.json
+.idea
+.project
+.strong-pm
+coverage
+node_modules
+client
+npm-debug.log
+package-lock.json
+.vs
+.vscode
