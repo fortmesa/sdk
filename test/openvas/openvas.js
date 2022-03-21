@@ -22,18 +22,32 @@ var resultMapper = {
     },
     lastScanDate: 'modification_time',
     findingId: {
-        path: 'name',
-        required: true
+        path: 'nvt.cve',
+        required: false,
+        formatting: (value) => {
+            if( value === "NOCVE" )
+                return null;
+            else
+                return value;
+        }
     },
     title: 'name',
     description: 'description',
-    numericSeverity: {
+    severityOtherScore: {
         path: 'severity',
         required: true,
-        formatting: (value) => {
-            var res = value.split(".", 1);
-            return res[0];
-        }
+//        formatting: (value) => {
+//            var res = value.split(".", 1);
+//            return res[0];
+//        }
+    },
+    severityCVSS2Score: {
+        path: 'nvt.cvss_base',
+        required: false,
+//        formatting: (value) => {
+//            var res = value.split(".", 1);
+//            return res[0];
+//        }
     },
     severity: 'threat',
     confidence: 'qod.value'
@@ -132,6 +146,7 @@ sdk.init({
             }
             setTimeout(function () {
                 jsonMapper(data.report.report.results.result, resultMapper).then((result) => {
+                    //return console.dir(result,{depth:5});
                     sdk.submit({
                         assets: assets,
                         vulnerabilities: result
