@@ -12,6 +12,7 @@ The payload object will be checked for basic reasonable values and submitted usi
 ## Payload
 
 The payload object will be formatted such as a json object:
+```
 {
   assets: [
     {
@@ -70,4 +71,4 @@ The payload object will be formatted such as a json object:
     }
   }
 }
-
+```
