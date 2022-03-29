@@ -46,7 +46,7 @@ The payload object will be formatted such as a json object:
       "isArchived":         boolean         Archive asset database entry
     }
   ],
-  vaulnerabilities: [
+  vulnerabilities: [
     {
       "deviceId":           string          deviceId of asset this vulnerability applies to
       "service":            string
@@ -69,6 +69,6 @@ The payload object will be formatted such as a json object:
       "numericSeverity":    (string)        from 0 to 10, written to severityOtherScore
       "severity":           string          Human readable severity, used if numericSeverity is empty
     }
-  }
+  ]
 }
 ```
