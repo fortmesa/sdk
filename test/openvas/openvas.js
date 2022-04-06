@@ -101,18 +101,16 @@ function nslookupReverse(asset, callback) {
 },
 */
 
-sdk.init({
-    url: process.argv[2]
-}, function (err) {
     readOpenVAS(null, function (err, data) {
         if (err)
             console.log("Error: ", err);
         else {
-            var assets = [];
+            let assets = [];
+            let scanDate = new Date();
             for (var i = 0, l = data.report.report.host.length; i < l; i++) {
-                var host = data.report.report.host[i];
+                let host = data.report.report.host[i];
                 if (host.ip) {
-                    var asset = {
+                    let asset = {
                         ipAddress: host.ip,
                         isActive: 16,
                         systemInventoryScanDate: host.start,
@@ -120,7 +118,7 @@ sdk.init({
                         assetLabel: host.ip
                     };
                     if (host.detail) {
-                        for (var i2 = 0, l2 = host.detail.length; i2 < l2; i2++) {
+                        for (let i2 = 0, l2 = host.detail.length; i2 < l2; i2++) {
                             switch (host.detail[i2].name) {
                             case 'MAC':
                                 let mac = host.detail[i2].value.toLowerCase();
@@ -141,22 +139,28 @@ sdk.init({
                             finalAsset.assetLabel = ptr;
                         if (typeof finalAsset === 'object' && finalAsset.deviceId)
                             assets.push(finalAsset);
+                        if (finalAsset.systemInventoryScanDate)
+                            scanDate=finalAsset.systemInventoryScanDate;
                     });
                 }
             }
             setTimeout(function () {
                 jsonMapper(data.report.report.results.result, resultMapper).then((result) => {
                     //return console.dir(result,{depth:5});
-                    sdk.submit({
-                        assets: assets,
-                        vulnerabilities: result
-                    }, function (err, res) {
-                        if (err)
-                            return console.log('Error: ', err);
-                        return console.log('Result = ', res.statusCode);
+                    sdk.init({
+                        url: process.argv[2],
+                        scanDate: scanDate
+                    }, function(err) {
+                        sdk.submit({
+                            assets: assets,
+                            vulnerabilities: result
+                        }, function (err, res) {
+                            if (err)
+	                            return console.log('Error: ', err);
+                            return console.log('Result = ', res.statusCode);
+                        });
                     });
                 });
             }, 10000);
         }
     });
-});
