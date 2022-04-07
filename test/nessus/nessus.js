@@ -158,7 +158,6 @@ for( let arg=3; arg<process.argv.length; arg++) {
                     }
                 }
             }
-            process.exit(1);
             //return process.stdout.write(JSON.stringify({assets:assets,vulnerabilities: vulns}));
             sdk.init({
                 url: process.argv[2],
