@@ -35,7 +35,11 @@ function readNessus(file, cb) {
     });
 };
 
-    readNessus(null, function (err, data) {
+if(process.argv.length<4) {
+    process.argv.push("/dev/stdin");
+}
+for( let arg=3; arg<process.argv.length; arg++) {
+    readNessus(process.argv[arg], function (err, data) {
         if (err)
             console.log("Error: ", err);
         else {
@@ -154,6 +158,7 @@ function readNessus(file, cb) {
                     }
                 }
             }
+            process.exit(1);
             //return process.stdout.write(JSON.stringify({assets:assets,vulnerabilities: vulns}));
             sdk.init({
                 url: process.argv[2],
@@ -170,3 +175,4 @@ function readNessus(file, cb) {
             });
         }
     });
+}
