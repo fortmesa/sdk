@@ -139,8 +139,17 @@ function readNessus(file, cb) {
                             if(item.cve)
                                 vuln.findingId=item.cve;
                             
-                            if(!ignoreIDs[pluginId])
-                                vulns.push(vuln);
+                            if(!ignoreIDs[pluginId]) {
+                                if(typeof vuln.findingId ==="object") {
+                                    vuln.findingId.forEach((cve) => {
+                                        let tmp={...vuln};
+                                        tmp.findingId=cve;
+                                        vulns.push(tmp);
+                                    });
+                                } else {
+                                    vulns.push(vuln);
+                                }
+                            }
                         }
                     }
                 }
