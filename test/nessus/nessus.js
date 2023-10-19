@@ -19,24 +19,22 @@ if (process.argv[2] == null || !process.argv[2].startsWith('http')) {
 }
 
 function readNessus(file, cb) {
-    var parser = new xml2js.Parser({
+    let parser = new xml2js.Parser({
             explicitArray: false
         });
-    if (file === null)
-        file = "/dev/stdin";
-    fs.readFile(file, function (err, data) {
+    if(file==null || file=='') {
+        file=process.stdin.fd;
+    }
+    let data = fs.readFileSync(file, 'utf-8');
+    parser.parseString(data, function (err, result) {
         if (err)
             return cb(err);
-        parser.parseString(data, function (err, result) {
-            if (err)
-                return cb(err);
-            return cb(null, result);
-        });
+        return cb(null, result);
     });
 };
 
 if(process.argv.length<4) {
-    process.argv.push("/dev/stdin");
+    process.argv.push('');
 }
 for( let arg=3; arg<process.argv.length; arg++) {
     readNessus(process.argv[arg], function (err, data) {

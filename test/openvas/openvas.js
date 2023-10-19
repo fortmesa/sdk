@@ -1,11 +1,11 @@
 'use strict'
 
-var path = require('path');
-var fs = require('fs');
-var dns = require('dns');
-var xml2js = require('xml2js');
-var jsonMapper = require('json-mapper-json');
-var sdk = require('../../lib/index');
+const path = require('path');
+const fs = require('fs');
+const dns = require('dns');
+const xml2js = require('xml2js');
+const jsonMapper = require('json-mapper-json');
+const sdk = require('../../lib/index');
 
 var macList = {};
 
@@ -37,7 +37,7 @@ var resultMapper = {
         path: 'severity',
         required: true,
 //        formatting: (value) => {
-//            var res = value.split(".", 1);
+//            let res = value.split(".", 1);
 //            return res[0];
 //        }
     },
@@ -45,12 +45,12 @@ var resultMapper = {
         path: 'nvt.cvss_base',
         required: false,
 //        formatting: (value) => {
-//            var res = value.split(".", 1);
+//            let res = value.split(".", 1);
 //            return res[0];
 //        }
     },
     severity: 'threat',
-    confidence: 'qod.value'
+    confidence: 'qod.value',
 };
 
 if (process.argv[2] == null || !process.argv[2].startsWith('http')) {
@@ -59,11 +59,11 @@ if (process.argv[2] == null || !process.argv[2].startsWith('http')) {
 }
 
 function readOpenVAS(file, cb) {
-    var parser = new xml2js.Parser({
+    let parser = new xml2js.Parser({
             explicitArray: false
         });
-    if (file === null)
-        file = "/dev/stdin";
+    if (file == null || file == '')
+        file = process.stdin.fd;
     fs.readFile(file, function (err, data) {
         if (err)
             return cb(err);
@@ -76,8 +76,8 @@ function readOpenVAS(file, cb) {
 };
 
 function nslookupReverse(asset, callback) {
-    var called = false;
-    var doCallback = function(err, domains) {
+    let called = false;
+    let doCallback = function(err, domains) {
         if (called) return;
         called = true;
         if(typeof domains === 'object' && domains.length>0 && typeof domains[0] === 'string' && domains[0].length > 4)
@@ -107,7 +107,7 @@ function nslookupReverse(asset, callback) {
         else {
             let assets = [];
             let scanDate = new Date();
-            for (var i = 0, l = data.report.report.host.length; i < l; i++) {
+            for (let i = 0, l = data.report.report.host.length; i < l; i++) {
                 let host = data.report.report.host[i];
                 if (host.ip) {
                     let asset = {
@@ -115,7 +115,8 @@ function nslookupReverse(asset, callback) {
                         isActive: 16,
                         systemInventoryScanDate: host.start,
                         deviceId: host.ip,
-                        assetLabel: host.ip
+                        assetLabel: host.ip,
+                        unstructuredAssetInfo: JSON.parse(JSON.stringify(host).replace(/"\$":/g,'"key":'))
                     };
                     if (host.detail) {
                         for (let i2 = 0, l2 = host.detail.length; i2 < l2; i2++) {
@@ -146,7 +147,10 @@ function nslookupReverse(asset, callback) {
             }
             setTimeout(function () {
                 jsonMapper(data.report.report.results.result, resultMapper).then((result) => {
-                    //return console.dir(result,{depth:5});
+                    for (let i = 0, l = result.length; i < l; i++) {
+                        result[i].attributes=JSON.parse(JSON.stringify(data.report.report.results.result[i]).replace(/"\$":/g,'"key":'));
+                    }
+                    return process.stdout.write(JSON.stringify({assets:assets,vulnerabilities: result}));
                     sdk.init({
                         url: process.argv[2],
                         scanDate: scanDate

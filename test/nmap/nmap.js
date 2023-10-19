@@ -1,8 +1,8 @@
 'use strict'
 
-var path = require('path');
-var fs = require('fs');
-var sdk = require('../../lib/index');
+const path = require('path');
+const fs = require('fs');
+const sdk = require('../../lib/index');
 
 if(process.argv[2] == null || !process.argv[2].startsWith('http')) {
    console.log('Pass the webhook url as an argument');
@@ -12,11 +12,10 @@ if(process.argv[2] == null || !process.argv[2].startsWith('http')) {
 sdk.init(process.argv[2]);
 
 function readJSON(file,cb) {
-  if(file === null) file="/dev/stdin";
-  fs.readFile(file, function(err, data) {
-    if(err) return cb(err);
-    return cb(null,JSON.parse(data));
-  });
+  if(file == null || file=='')
+    file=process.stdin.fd;
+  let data = fs.readFileSync(file);
+  return cb(null,JSON.parse(data));
 };
 
 
