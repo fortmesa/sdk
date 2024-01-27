@@ -6,7 +6,7 @@
     "lib/"
   ],
   "dependencies": {
-    "axios": "^1.5.1"
+    "axios": "^1.6.7"
   },
   "devDependencies": {
     "html-entities": "^2.4.0",
