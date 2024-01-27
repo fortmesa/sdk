@@ -1,13 +1,12 @@
 'use strict'
 
-var path = require('path');
-var fs = require('fs');
-var dns = require('dns');
-var xml2js = require('xml2js');
-var jsonMapper = require('json-mapper-json');
-var sdk = require('../../lib/index');
+const path = require('path');
+const fs = require('fs');
+const dns = require('dns');
+const xml2js = require('xml2js');
+const sdk = require('../../lib/index');
 
-var ignoreIDs = {
+const ignoreIDs = {
     '19506': true,
     '10287': true,
 };
@@ -18,29 +17,24 @@ if (process.argv[2] == null || !process.argv[2].startsWith('http')) {
     process.exit();
 }
 
-function readNessus(file, cb) {
-    let parser = new xml2js.Parser({
+async function readFile(file) {
+    const parser = new xml2js.Parser({
             explicitArray: false
         });
     if(file==null || file=='') {
         file=process.stdin.fd;
     }
-    let data = fs.readFileSync(file, 'utf-8');
-    parser.parseString(data, function (err, result) {
-        if (err)
-            return cb(err);
-        return cb(null, result);
-    });
+    const data = fs.readFileSync(file, 'utf-8');
+    return parser.parseStringPromise(data);
 };
 
 if(process.argv.length<4) {
     process.argv.push('');
 }
-for( let arg=3; arg<process.argv.length; arg++) {
-    readNessus(process.argv[arg], function (err, data) {
-        if (err)
-            console.log("Error: ", err);
-        else {
+
+(async()=>{
+  for( let arg=3; arg<process.argv.length; arg++) {
+    let data = await readFile(process.argv[arg]);
             let assets = [];
             let vulns = [];
             let scanDate;
@@ -49,7 +43,7 @@ for( let arg=3; arg<process.argv.length; arg++) {
                 if (host['$'].name) {
                     let asset = {
                         isActive: 16,
-                        unstructuredAssetInfo: JSON.parse(JSON.stringify(host.HostProperties).replace(/"\$":/g,'"key":')),
+                        //unstructuredAssetInfo: JSON.parse(JSON.stringify(host.HostProperties).replace(/"\$":/g,'"key":')),
                         deviceId: host['$'].name.toLowerCase(),
                         assetLabel: host['$'].name.toLowerCase(),
                         
@@ -146,30 +140,26 @@ for( let arg=3; arg<process.argv.length; arg++) {
                                     vuln.findingId.forEach((cve) => {
                                         let tmp={...vuln};
                                         tmp.findingId=cve;
-                                        vulns.push(tmp);
+                                        //vulns.push(tmp);
                                     });
                                 } else {
-                                    vulns.push(vuln);
+                                    //vulns.push(vuln);
                                 }
                             }
                         }
                     }
                 }
             }
-            //return process.stdout.write(JSON.stringify({assets:assets,vulnerabilities: vulns}));
-            sdk.init({
+    //return process.stdout.write(JSON.stringify({assets:assets,vulnerabilities: vulns}));
+    await sdk.init({
                 url: process.argv[2],
                 scanDate: scanDate
-            }, function (err) {
-                sdk.submit({
+    });
+    let res = await sdk.submit({
                     assets: assets,
                     vulnerabilities: vulns
-                }, function (err, res) {
-                    if (err)
-                        return console.log('Error: ', err);
-                    return console.log('Result = ', res.statusCode);
                 });
-            });
-        }
-    });
-}
+    console.log('Result = ', res.statusCode);
+  }
+})();
+

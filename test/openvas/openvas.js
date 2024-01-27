@@ -9,7 +9,7 @@ const sdk = require('../../lib/index');
 
 var macList = {};
 
-var resultMapper = {
+const resultMapper = {
     deviceId: {
         path: 'host._',
         required: true,
@@ -58,36 +58,27 @@ if (process.argv[2] == null || !process.argv[2].startsWith('http')) {
     process.exit();
 }
 
-function readOpenVAS(file, cb) {
-    let parser = new xml2js.Parser({
+async function readFile(file) {
+    const parser = new xml2js.Parser({
             explicitArray: false
         });
-    if (file == null || file == '')
-        file = process.stdin.fd;
-    fs.readFile(file, function (err, data) {
-        if (err)
-            return cb(err);
-        parser.parseString(data, function (err, result) {
-            if (err)
-                return cb(err);
-            return cb(null, result);
-        });
-    });
-};
+    if(file==null || file=='') {
+        file=process.stdin.fd;
+    }
+    const data = fs.readFileSync(file, 'utf-8');
+    return parser.parseStringPromise(data);
+}
 
-function nslookupReverse(asset, callback) {
-    let called = false;
-    let doCallback = function(err, domains) {
-        if (called) return;
-        called = true;
-        if(typeof domains === 'object' && domains.length>0 && typeof domains[0] === 'string' && domains[0].length > 4)
-            return callback(null,asset,domains[0]);
-        else
-            return callback(null,asset,null);
-    };
-    setTimeout(function() { doCallback(new Error("Timeout exceeded"), null); }, 7000);
-    
-    dns.reverse(asset.ipAddress, doCallback);
+const timeout = (delay, message) => new Promise((_, reject) => setTimeout(reject, delay, message));
+
+async function nslookupReverse(asset) {
+    try {
+      const domains = await Promise.race([dns.promises.reverse(asset.ipAddress), timeout(7000, null)]);
+      if(typeof domains === 'object' && domains.length>0 && typeof domains[0] === 'string' && domains[0].length > 4)
+        return domains[0];
+    } catch(e) {
+      return;
+    }
 };
 
 /*
@@ -101,10 +92,9 @@ function nslookupReverse(asset, callback) {
 },
 */
 
-    readOpenVAS(null, function (err, data) {
-        if (err)
-            console.log("Error: ", err);
-        else {
+(async()=>{
+  for( let arg=3; arg<process.argv.length; arg++) {
+    let data = await readFile(process.argv[arg]);
             let assets = [];
             let scanDate = new Date();
             for (let i = 0, l = data.report.report.host.length; i < l; i++) {
@@ -135,36 +125,28 @@ function nslookupReverse(asset, callback) {
                             }
                         }
                     }
-                    nslookupReverse(asset, function (err, finalAsset, ptr) {
-                        if (typeof ptr === 'string')
-                            finalAsset.assetLabel = ptr;
-                        if (typeof finalAsset === 'object' && finalAsset.deviceId)
-                            assets.push(finalAsset);
-                        if (finalAsset.systemInventoryScanDate)
-                            scanDate=finalAsset.systemInventoryScanDate;
-                    });
+                    let ptr = await nslookupReverse(asset);
+                    if (typeof ptr === 'string')
+                        asset.assetLabel = ptr;
+                    if (typeof asset === 'object' && asset.deviceId)
+                        assets.push(asset);
+                    if (asset.systemInventoryScanDate)
+                        scanDate=asset.systemInventoryScanDate;
                 }
             }
-            setTimeout(function () {
-                jsonMapper(data.report.report.results.result, resultMapper).then((result) => {
-                    for (let i = 0, l = result.length; i < l; i++) {
-                        result[i].attributes=JSON.parse(JSON.stringify(data.report.report.results.result[i]).replace(/"\$":/g,'"key":'));
-                    }
-                    return process.stdout.write(JSON.stringify({assets:assets,vulnerabilities: result}));
-                    sdk.init({
-                        url: process.argv[2],
-                        scanDate: scanDate
-                    }, function(err) {
-                        sdk.submit({
-                            assets: assets,
-                            vulnerabilities: result
-                        }, function (err, res) {
-                            if (err)
-	                            return console.log('Error: ', err);
-                            return console.log('Result = ', res.statusCode);
-                        });
-                    });
-                });
-            }, 10000);
-        }
+    let result = await jsonMapper(data.report.report.results.result, resultMapper);
+    for (let i = 0, l = result.length; i < l; i++) {
+      result[i].attributes=JSON.parse(JSON.stringify(data.report.report.results.result[i]).replace(/"\$":/g,'"key":'));
+    }
+    //return process.stdout.write(JSON.stringify({assets:assets,vulnerabilities: result}));
+    await sdk.init({
+      url: process.argv[2],
+      scanDate: scanDate
     });
+    let res = await sdk.submit({
+      assets: assets,
+      vulnerabilities: result
+    });
+    console.log('Result (',process.argv[arg],') = ', res.statusCode);
+  }
+})();

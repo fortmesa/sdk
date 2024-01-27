@@ -1,9 +1,9 @@
 'use strict'
 
-var path = require('path');
-var fs = require('fs');
-var jsonMapper = require('json-mapper-json');
-var sdk = require('../../lib/index');
+const path = require('path');
+const fs = require('fs');
+const jsonMapper = require('json-mapper-json');
+const sdk = require('../../lib/index');
 
 if(process.argv[2] == null || !process.argv[2].startsWith('http')) {
    console.log('Pass the webhook url as an argument');
@@ -18,9 +18,7 @@ if(process.argv[3] == null) {
 var my_deviceId=process.argv[3];
 var my_time=new Date();
 
-sdk.init(process.argv[2]);
-
-var resultMapper = {
+const resultMapper = {
   deviceId: {
     path: 'title',
     required: true,
@@ -46,30 +44,27 @@ var resultMapper = {
   }
 };
 
-function readnpmaudit(cb) {
+async function readnpmaudit() {
   var stdin = process.stdin;
   var inputJSON='';
   
   stdin.setEncoding('utf8');
   stdin.on('data', function(chunk) { inputJSON+=chunk; });
   stdin.on('end', function() {
-    let result=JSON.parse(inputJSON);
-    return cb(null,result);
+    return JSON.parse(inputJSON);
   });
 };
 
 
-readnpmaudit(function(err,data) {
-  if(err) console.log("Error: ",err);
-  else {
-    var data2 = Object.keys(data.advisories).map(function(k) { var record=data.advisories[k]; record.name=data.advisories[k].id + ' ' + data.advisories[k].title; return record; });
-//    console.dir(data2,{depth:null});
-    jsonMapper(data2,resultMapper).then( (result) => {
-       console.dir(result,{depth:null});
-      sdk.submit({vulnerabilities: result}, function(err,res) {
-        if(err) return console.log('Error: ',err);
-        return console.log('Result = ',res.statusCode);
-      });
-    });
-  }
-});
+(async()=>{
+  let data = await readnpmaudit();
+  
+  let data2 = Object.keys(data.advisories).map(function(k) { var record=data.advisories[k]; record.name=data.advisories[k].id + ' ' + data.advisories[k].title; return record; });
+  //console.dir(data2,{depth:null});
+  let result = await jsonMapper(data2,resultMapper);
+  //console.dir(result,{depth:null});
+  await sdk.init(process.argv[2]);
+
+  let res = await sdk.submit({vulnerabilities: result});
+  console.log('Result = ',res.statusCode);
+})();

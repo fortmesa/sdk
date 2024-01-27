@@ -1,19 +1,17 @@
 'use strict'
 
-var path = require('path');
-var fs = require('fs');
-var xml2js = require('xml2js');
-var jsonMapper = require('json-mapper-json');
-var sdk = require('../../lib/index');
+const path = require('path');
+const fs = require('fs');
+const xml2js = require('xml2js');
+const jsonMapper = require('json-mapper-json');
+const sdk = require('../../lib/index');
 
 if(process.argv[2] == null || !process.argv[2].startsWith('http')) {
    console.log('Pass the webhook url as an argument');
    process.exit();
 }
 
-sdk.init(process.argv[2]);
-
-var hostsMapper = {
+const hostsMapper = {
   deviceId: {
     path: 'mac',
     required: true
@@ -35,32 +33,38 @@ var hostsMapper = {
 
 };
 
-function readMegasploit(file,cb) {
-  var parser = new xml2js.Parser({explicitArray: false});
-  fs.readFile(file, function(err, data) {
-    if(err) return cb(err);
-    parser.parseString(data, function (err, result) {
-      if(err) return cb(err);
-      return cb(null,result);
-    });
-  });
-};
+async function readFile(file) {
+  const parser = new xml2js.Parser({explicitArray: false});
+  if(file==null || file=='') {
+      file=process.stdin.fd;
+  }
+  let data = fs.readFileSync(file, 'utf-8');
+  return parser.parseStringPromise(data);
+}
 
+if(process.argv.length<4) {
+    process.argv.push('hosts.xml');
+}
 
-readMegasploit("./hosts.xml",function(err,data) {
-  if(err) console.log("Error: ",err);
-  else {
-    switch(Object.keys(data)[0]) {
-      case 'hosts':
-        jsonMapper(data.hosts.entry,hostsMapper).then( (result) => {
-          sdk.submit({assets: result}, function(err,res) {
-            if(err) return console.log('Error: ',err);
-            return console.log('Result = ',res.statusCode);
+(async()=>{
+  for( let arg=3; arg<process.argv.length; arg++) {
+    let data = await readFile(process.argv[arg]);
+    if(data) {
+      switch(Object.keys(data)[0]) {
+        case 'hosts':
+          let result =await jsonMapper(data.hosts.entry.hostsMapper);
+          //return console.dir(result,{depth:8});
+          await sdk.init({
+            url: process.argv[2]
           });
-        });
-        break;
-      default:
-        break;
+          let ret = await sdk.submit({
+            assets: result
+          });
+          console.log('Result(',process.argv[arg],') = ', ret.statusCode);
+          break;
+        default:
+          break;
+      }
     }
   }
-});
+})();
