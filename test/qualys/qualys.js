@@ -102,7 +102,7 @@ async function readFile(file) {
       if(Array.isArray(data.ASSET_DATA_REPORT?.HOST_LIST.HOST))
         data=data.ASSET_DATA_REPORT.HOST_LIST.HOST;
       else
-        data=[dataASSET_DATA_REPORT.HOST_LIST.HOST];
+        data=[data.ASSET_DATA_REPORT.HOST_LIST.HOST];
       if(data && data.length) {
         assets=[];
         vulns=[];
@@ -227,7 +227,7 @@ async function readFile(file) {
 
     } catch(err) {
       console.log('XML Error: ',err);
-      console.log('Did not find valid JSON or XML input ',file);
+      console.log('Did not find valid XML input ',file);
     }
     return {assets: assets,vulnerabilities: vulns};
 };
