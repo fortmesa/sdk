@@ -55,6 +55,32 @@ async function readFile(file) {
           if(!obj.description && item.THREAT)
             obj.description=htmlEntities.decode(item.THREAT);
             
+          if(item.CVSS_SCORE?.CVSS_BASE) {
+            let str = item.CVSS_SCORE.CVSS_BASE;
+            if(typeof(str) === 'object' && str['_'])
+              str=str['_'];
+            if(typeof(str) === 'string') {
+              let m = str.match(/(\d+\.\d+) \((.*)\)/);
+              if(m && m.length>2) {
+                obj.severityCVSS2Score=m[1];
+                obj.severityCVSS2Vector=m[2];
+              }
+            }
+          }
+
+          if(item.CVSS3_SCORE?.CVSS3_BASE) {
+            let str = item.CVSS3_SCORE.CVSS3_BASE;
+            if(typeof(str) === 'object' && str['_'])
+              str=str['_'];
+            if(typeof(str) === 'string') {
+              let m = str.match(/(\d+\.\d+) \((.*)\)/);
+              if(m && m.length>2) {
+                obj.severityCVSS3Score=m[1];
+                obj.severityCVSS3Vector=m[2];
+              }
+            }
+          }
+
           if(Array.isArray(item.CVE_ID_LIST?.CVE_ID)) {
             obj.cve=[];
             for(let c in item.CVE_ID_LIST.CVE_ID) {
@@ -157,6 +183,11 @@ async function readFile(file) {
                 vuln.userAttributes={};
               vuln.userAttributes.ticket=item.TICKET_NUMBER;
             }
+            
+            if(typeof(item.CVSS_FINAL) === 'string')
+              vuln.severityCVSS2Score=item.CVSS_FINAL;
+            if(typeof(item.CVSS3_FINAL) === 'string')
+              vuln.severityCVSS3Score=item.CVSS3_FINAL;
             
             if(!vuln.title && item.PROTOCOL && item.PORT && vuln.userAttributes?.qid)
               vuln.title='qid_'+vuln.userAttributes.qid+' '+item.PROTOCOL+'/'+item.PORT+' '+htmlEntities.decode(item.SERVICE);;
