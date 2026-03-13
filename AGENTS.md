@@ -6,6 +6,9 @@
 
 **Back to Root Map**: [fm-devcontainer/AGENTS.md](../fm-devcontainer/AGENTS.md)
 
+> [!TIP]
+> **Discovery Mode**: If you are reading this file, you are working in this repository. You **MUST** immediately check for and ingest all skills located in `.agent/skills/` (if any) to ensure you follow local protocols.
+
 ## Repository Overview
 
 **Type**: V1 Public API SDK / CLI Tool
@@ -143,6 +146,8 @@ await fmsdk.submit({
 
 ## Related Documentation
 
+- [GUIDELINES.md](GUIDELINES.md) — Coding standards and anti-patterns
+- [DECISIONS.md](DECISIONS.md) — Architectural decisions
 - [fortmesa.readme.io](https://fortmesa.readme.io/) - V1/V2 API documentation
 - [fmweb-be ENDPOINTS.md](../fmweb-be/.agent/api/ENDPOINTS.md) - Backend API surface
 - [fmweb-wq JOBS.md](../fmweb-wq/.agent/jobs/JOBS.md) - `incomingWebHook` job type
