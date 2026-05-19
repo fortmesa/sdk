@@ -240,7 +240,7 @@ if(process.argv.length<4) {
   for( let arg=3; arg<process.argv.length; arg++) {
     scanDate=null;
     let data = await readFile(process.argv[arg]);
-    //return console.dir(data,{depth:8});
+    //return process.stdout.write(JSON.stringify(data));
     await sdk.init({
         url: process.argv[2],
         scanDate: scanDate

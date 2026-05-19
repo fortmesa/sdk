@@ -1,3 +1,4 @@
+*.pem
 *.dat
 *.iml
 *.log
